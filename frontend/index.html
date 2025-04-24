@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silverwax</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Silverwax</h1>
+    </div>
+    <div class="main">
+        <div class="form">
+            <form id="orderForm">
+                <input type="email" name="email" placeholder="email" required>
+                <input type="text" name="city" placeholder="city" required>
+                <input type="text" name="street" placeholder="street" required>
+                <input type="text" name="house" placeholder="house" required>
+                <input type="text" name="apartment" placeholder="apartment">
+                <input type="text" name="name" placeholder="name" required>
+                <button type="submit">Tap to order</button>
+            </form>
+            <p class="form__message" id="responseMessage"></p>
+        </div>
+        <div class="product-image">
+            <img src="images/tshirt.png" class="image" alt="Футболка" width="300px">
+            <p class="description">3500 RUB</p>
+            <p class="description">One Size: length 66sm, bust 52sm, shoulder 54.5sm, sleeve 20sm.</p>
+        </div>
+        <div class="form">
+            <form id="statusForm">
+                <input type="email" name="email" placeholder="Enter your email" required>
+                <button type="submit">Check the order status</button>
+            </form>
+            <p class="form__message" id="statusMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        // Обработка формы заказа
+        document.getElementById("orderForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            try {
+                const response = await fetch("http://localhost/api/order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                });
+                if (!response.ok) throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+                const result = await response.json();
+                document.getElementById("responseMessage").textContent = result.message || "The order has been placed!";
+            } catch (error) {
+                document.getElementById("responseMessage").textContent = "Error when submitting the form.";
+            }
+        });
+
+        // Обработка формы проверки статуса
+        document.getElementById("statusForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            try {
+                const response = await fetch(`http://localhost/api/order/status?email=${email}`, {
+                    method: "GET",
+                });
+                if (!response.ok) throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+                const result = await response.json();
+                
+                if (result.orders && result.orders.length > 0) {
+                    let statusMessage = "";
+                    result.orders.forEach(order => {
+                        statusMessage += `Order ID${order.id}: ${order.status}<br>`;
+                    });
+                    document.getElementById("statusMessage").innerHTML = statusMessage;
+                } else {
+                    document.getElementById("statusMessage").textContent = "No orders found.";
+                }
+            } catch (error) {
+                document.getElementById("statusMessage").textContent = "Error when checking the status.";
+            }
+            });
+    </script>
+</body>
+</html>
